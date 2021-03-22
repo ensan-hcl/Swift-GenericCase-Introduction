@@ -318,7 +318,7 @@ You have to make bound variables to have the unique type for type safety.
 case <T, S> let .double(a as T, b as T), let .tuple(a as T, b as S):
 ```
 
-Type parameters are inferred from as the associated values' actual types. All type parameters must be inferred in each pattern. 
+Type parameters are inferred from the associated values' actual types. All type parameters must be inferred in each pattern. 
 
 ```Swift
 //OK
