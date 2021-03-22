@@ -1,5 +1,7 @@
 # Idea: Introduce 'generic-case' to refine pattern matching of enums with associated values
 
+[toc]
+
 ## Introduction
 
 **Generic-case** is a new feature that refines pattern matching of enums with associated values, especially in switch statements.
@@ -70,7 +72,7 @@ However, this is not enough when dealing with **generic functions**. Following c
 ```Swift
 func encode(to encoder: Encoder) throws {
     var container = encoder.container(keyedBy: CodingKeys.self)
-    switch self{
+    switch thing{
     case let .int(value as Encodable), let .string(value as Encodable): 
         //Error
         //No exact matches in call to instance method 'encode'
@@ -151,14 +153,14 @@ case let .int64(value as BitWidthServer),
      let .int8(value as BitWidthServer):
     return value.bitWidth
 ```
-But obviously, it is a too tiresome solution. You only want to use `value.bitWidth` which must exist in each pattern.
+But obviously, it is too a tiresome solution. You only want to use `value.bitWidth` which must exist in each pattern.
 
 ### Summary
 
-As above, currently, we have problems of ugly repetition due to inflexibility in switch statements with enums with associated values. However, our ways to deal with them are much too weak.
+As above, currently, we have problems of ugly repetition due to inflexibility in switch statements with enums with associated values. We can avoid them by using cast to the protocol existentials or super types. However, our ways to deal with them are much too weak.
 
 * We cannot call generic functions when we cast values as protocol existentials.
-* We cannot cast types as a protocol with associated types.
+* We cannot cast types as a protocol with Self or associated types.
 
 We have to make up some smart way to deal with such situations.
 
@@ -298,7 +300,7 @@ case <T: Encodable> let .int(value as T), let .string(value as T):
 case <T: StringProtocol> let .int(value as T), let .string(value as T): 
 ```
 
-However, type of target mast be `struct/enum/class` and not protocol existentials. This is from the same reason that protocol existentials cannot be applied to generic functions. 
+Type of target mast be `struct/enum/class` and not protocol existentials. This is from the same reason that protocol existentials cannot be applied to generic functions. 
 
 ```Swift
 enum protocols{
@@ -463,6 +465,22 @@ case 2...5:
 ```
 
 Considering these general cases, it requires much more consideration than it seems at a glance. This is a huge addition and there are no needs be discussed together with generic-case (of course discussion specified to generic-case is possible). This should be discussed later or as a separate proposal.
+
+## Source compatibility
+
+Generic-case is an additive feature that doesn't affect source compatibility.
+
+## Effect on ABI stability
+
+TBD
+
+## Effect on API resilience
+
+Generic-case is an additive feature that doesn't affect API resilience.
+
+## Relating discussion
+
+* [SE-0043 Declare variables in 'case' labels with multiple patterns](https://github.com/apple/swift-evolution/blob/main/proposals/0043-declare-variables-in-case-labels-with-multiple-patterns.md)
 
 ## Controversial points
 
@@ -656,22 +674,6 @@ case <T: Encodable> <String> is T:
 
 I don't know what is the best order of the components `let`, `<Type parameters>`, `pattern`.
 
-## Source compatibility
-
-Generic-case is an additive feature that doesn't affect source compatibility.
-
-## Effect on ABI stability
-
-TBD
-
-## Effect on API resilience
-
-Generic-case is an additive feature that doesn't affect API resilience.
-
-## Relating discussion
-
-* [SE-0043 Declare variables in 'case' labels with multiple patterns](https://github.com/apple/swift-evolution/blob/main/proposals/0043-declare-variables-in-case-labels-with-multiple-patterns.md)
-
 ## Alternative considered
 
 ### Variable declaration
@@ -684,33 +686,31 @@ case <T> (value: T) let .first(value), let .second(value):
     //here value has type `T`
     genericFunc(value)
 }
+
+//OK
+//`value` is casted and then bound, so in the case `value` has type T and actual type is Any
+case <T> (value: T) let .first(value as Any), let .second(value as Any):
 ```
 
-The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, maybe the use of `as` is sometimes misunderstanding. Also, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once.
+Here, a new variable `value: T` is declared at the begining after type parameters, and then variable named `value` is bound in each pattern. If `value` is successfully bound and its type satisfies constraints of the declaration at the begining, `value: T` can be used inside the case.
 
-However, while `case<T>(value: T)` is 'function-like' syntax, then patterns come next. It is not obvious that the bound variable `let .first(value)` is 'applied' to the 'function'. Also, there is no clear association between `value` in the `(value: T)` and in the `.first(value)`. It seems a bit magical.
+The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, the use of `as` is sometimes misunderstanding. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Here explicit type parameter declaration is not required. Because you can cast value, you can specify the type of value only write `as Type` explicitly.
 
-It is unexpectable what happens when you cast value inside the pattern because at what time the `value` is 'applied'.  
+The bad point of this syntax is its strong expressions. Because it has 'arguments-like' form, it is rational to assume that it can be used like others that use 'arguments-like' form, for example, functions, string interpolations and enums with associated values. Therefore, the next doubtful example should be alllowd.
 
 ```Swift
-switch either{
-case <T> (value: T) let .first(value as Any), let .second(value):
-    //here value has type `T`
-    genericFunc(value)
-}
+//is it allowd?
+case <T> (a: T, b: Double? = nil) let .int(a), let .double(a, b):
 ```
 
-Also, this syntax impact to pattern matching without generic-case.
+Also, this syntax impacts pattern matchings without the generic-case. The next example should be allowed for the consistency of grammar because it is not natural to allow this syntax only with generic-case.
 
 ```Swift
-switch either{
-case (value: Int) let .int(value), let .tuple(value, _):
-    //here value has type `Int`
-    genericFunc(value)
-}
+//here `value` has type `Int` even if `.void` matches
+case (value: Int = 0) .void, let .int(value), let .tuple(value, _):
 ```
 
-Considering these things, this syntax was not selected.
+Because this syntax is much larger addition than the proposed syntax, this idea wasn't selected.
 
 ### Binding omission
 
@@ -897,7 +897,7 @@ func never() -> Never {
 }
 //Error
 //Instance method 'genericFunc(value:)' requires that 'Never' conform to 'Encodable'
-self.genericFunc(value: never())
+genericFunc(value: never())
 ```
 
 However, if `Never` works as the bottom type and satisfies all possible type constraints, then we can use **`Never` as the only possible dummy type parameters**. 
