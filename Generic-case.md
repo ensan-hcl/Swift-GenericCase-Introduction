@@ -1,7 +1,5 @@
 # Idea: Introduce 'generic-case' to refine pattern matching of enums with associated values
 
-[toc]
-
 ## Introduction
 
 **Generic-case** is a new feature that refines pattern matching of enums with associated values, especially in switch statements.
