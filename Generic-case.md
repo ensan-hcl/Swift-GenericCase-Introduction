@@ -466,26 +466,26 @@ Considering these general cases, it requires much more consideration than it see
 
 ## Controversial points
 
-### Type specifiers
+### Type parameters specifiers
 
-In generic-case, we use `value as T` as the type specifier.
+In generic-case, we use `value as T` as the type parameter specifier. Because without some specifications, we cannot find which value should be used as which type.
 
-However, this is not 'cast' in normal meaning, because in most cases `T` is equal to type of `value` and `T` is inferred from type of `value`. This is only the type specifier. So you may feel uncomfortable using `as` for the purpose of type specification.
+However, this is not 'cast' in normal meaning, because in most cases `T` is equal to type of `value` and `T` is inferred from type of `value`. This is only the type specifier. So you may feel uncomfortable using `as` for the purpose of type parameters specification.
 
-There are three reasons I selected `as`.
+There are three reasons why I selected `as`.
 
 1. Consistency with today's valid syntax.
 
    As above, following syntax is valid.
 
    ```Swift
-   case let .int(value as Encodable>
+   case let .int(value as Encodable)
    ```
 
    Therefore, it feels natural to me to inherit this syntax.
 
    ```Swift
-   case <T: Encodable> let .int(value as T>
+   case <T: Encodable> let .int(value as T)
    ```
 
 2. Today's use of `as` as the type specifier.
@@ -496,6 +496,8 @@ There are three reasons I selected `as`.
    //specify type of Integer Literal as Double
    let value = 3 as Double
    ```
+
+   (However, while this syntax says 'type of `3` is `Double`', `value as T` says '`T` is type of `value`'. Here the order is reversed.)
 
 3. There are no other symbols suitable for this usage.
 
@@ -528,9 +530,11 @@ There are three reasons I selected `as`.
 
    Therefore, I didn't select `:` as the type specifier.
 
-   Because there are no other ways to specify type in Swift, I couldn't select other symbols.
+   Because there are no other ways to specify type parameters in Swift, I couldn't select other symbols.
 
-I'm now believe `as` is suitable for this use, but it would be a controversial point.
+I'm now believe `as` is suitable for this use, but it would be a controversial point. 
+
+As an alternative to current syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#Variable declaration).
 
 ### Allow explicit type parameter declaration
 
@@ -668,7 +672,47 @@ Generic-case is an additive feature that doesn't affect API resilience.
 
 * [SE-0043 Declare variables in 'case' labels with multiple patterns](https://github.com/apple/swift-evolution/blob/main/proposals/0043-declare-variables-in-case-labels-with-multiple-patterns.md)
 
-## Alternative Considered
+## Alternative considered
+
+### Variable declaration
+
+As the alternative to proposed syntax of generic-case, following syntax is considered.
+
+```Swift
+switch either{
+case <T> (value: T) let .first(value), let .second(value):
+    //here value has type `T`
+    genericFunc(value)
+}
+```
+
+The good point of this syntax is that it doesn't require `as`.
+
+As I wrote in the controversial section, maybe the use of `as` is sometimes misunderstanding. Also, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once.
+
+However, while `case<T>(value: T)` is 'function-like' syntax, then patterns come next. It is not obvious that bound variable `let .first(value)` is 'applied' to the 'function'.
+
+It is unexpectable what happens when you cast value inside the pattern.
+
+```Swift
+switch either{
+case <T> (value: T) let .first(value as Any), let .second(value):
+    //here value has type `T`
+    genericFunc(value)
+}
+```
+
+Also, this syntax impact to pattern matching without generic-case.
+
+```Swift
+switch either{
+case (value: Int) let .int(value), let .tuple(value, _):
+    //here value has type `Int`
+    genericFunc(value)
+}
+```
+
+Considering these things, this syntax was not selected.
 
 ### Binding omission
 
