@@ -686,13 +686,11 @@ case <T> (value: T) let .first(value), let .second(value):
 }
 ```
 
-The good point of this syntax is that it doesn't require `as`.
+The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, maybe the use of `as` is sometimes misunderstanding. Also, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once.
 
-As I wrote in the controversial section, maybe the use of `as` is sometimes misunderstanding. Also, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once.
+However, while `case<T>(value: T)` is 'function-like' syntax, then patterns come next. It is not obvious that the bound variable `let .first(value)` is 'applied' to the 'function'. Also, there is no clear association between `value` in the `(value: T)` and in the `.first(value)`. It seems a bit magical.
 
-However, while `case<T>(value: T)` is 'function-like' syntax, then patterns come next. It is not obvious that bound variable `let .first(value)` is 'applied' to the 'function'.
-
-It is unexpectable what happens when you cast value inside the pattern.
+It is unexpectable what happens when you cast value inside the pattern because at what time the `value` is 'applied'.  
 
 ```Swift
 switch either{
