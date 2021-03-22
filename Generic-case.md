@@ -187,7 +187,7 @@ case let .second(value):
 }
 ```
 
-Then the examples can be written really simply:
+Then the examples can be written really simply.
 
 ```Swift
 enum Either<First, Second>: CustomStringConvertible {
@@ -284,7 +284,7 @@ case <T> let .int(value as T), let .string(value as T):
     nongenericFunc(value)
 ```
 
-You can add type constraints to generic-case. You can use patterns that never match the constraints, but it causes warning.
+You can add type constraints to generic-case. You can use patterns that don't satisfy the constraints, but it causes warning.
 
 ```Swift
 //OK
@@ -358,7 +358,7 @@ case <T: Encodable> is T:
 Because multiple pattern matching with `,` is only allowed in switch statements, this generic-case cannot be used effectively in `if case` or `for case`. However, it should be allowed for consistency of syntax.
 
 ```Swift
-//of course there is no need to write like this!
+//of course there are no needs to write like this!
 
 //OK
 if case <T> let .int(value as T) = thing{
@@ -442,7 +442,7 @@ case 2,3,4,5:
 default: //...
 }
 
-//how about this cases?
+//how about this case?
 case 2...5:
     switch intValue{
     case 2...4: //...
@@ -450,7 +450,7 @@ case 2...5:
     }
 ```
 
-Considering these general cases, it requires much more consideration than it seems at a glance. This is a huge addition and there is no need be discussed together with generic-case (of course discussion specified to generic-case is possible). This should be discussed later or as a separate proposal.
+Considering these general cases, it requires much more consideration than it seems at a glance. This is a huge addition and there are no needs be discussed together with generic-case (of course discussion specified to generic-case is possible). This should be discussed later or as a separate proposal.
 
 ## Controversial points
 
@@ -503,14 +503,14 @@ There are three reasons I selected `as`.
    case <T: Encodable> let .int(number: value: T)
    ```
 
-   Also, with today's Swift, even though enum doesn't have label, developer can set label in pattern. Therefore, next case works but very strange.
+   Also, with today's Swift, even though enum doesn't have label, developer can set label in pattern. Therefore, the next example works strangely.
 
    ```Swift
    //Swift5.3
    enum Integer{
-       case int(Int64)
+       case int64(Int64)
    }
-   case let .int(value: Encodable):
+   case let .int64(value: Encodable):
        //here, not `value`, but `Encodable` works as the variable of type `Int64`
    ```
 
@@ -576,14 +576,14 @@ Here, without explicit specification, you cannot cast `Mammal` to `Dog`. Therefo
 
 #### Needs
 
-The example is only an example, and I don't know whether there are such cases in practical situation or not. If there is no need, it is simply wasteful.
+The example is only an example, and I don't know whether there are such cases in practical situation or not. If there are no needs, it is simply wasteful.
 
 #### Order of component
 
-This is impossible style.
+This is impossible style because which `<Type>` specify which type parameter is not clear.
 
 ```Swift
-//it's impossible because which <Type> specify which type parameter is not clear
+//it's impossible
 case <T, S>
 .double(let <Double> a as T, let <Double> b as S),
 .tuple(let <Int> a as T, let <String> b as S):
@@ -599,7 +599,7 @@ case .tuple(let a, let b):
     //operation when `thing` is `.tuple`
 ```
 
-To achive this style, all of type parameters are declared at once.
+To achive this style, all of type parameters should be declared at once.
 
 ```Swift
 //it's possible
@@ -608,7 +608,7 @@ case <T, S>
 <Int, String> .tuple(let a as T, let b as S):
 ```
 
-However, it becomes ugly when you remove \n.
+However, it becomes ugly when you remove `\n`.
 
 ```Swift
 //it's hard to read 
@@ -883,11 +883,10 @@ let .doubles(a as T, b as S):
     //...
 ```
 
-Although this feature enables simple codes, it is not obvious what happens when matches `.int(a as T)`. Developers can notice that they lack `b` declaration by finding that `b` has type `S?`, but it is difficult to know that `b` has type `Never?` when the declaration of `b` is omitted. Simply speaking, this is much too magical.
+Although this feature enables simple codes, it is not obvious what happens when matches `.int(a as T)`. Developers can notice that they lack `b` declaration by finding that `b` has type `S?`, but it is difficult to know that `b` has type `Never?`. Simply speaking, this is much too magical.
 
-Also, as written this feature requires `Never` as the bottom type. It was discussed in several threads but has not been finished yet.
+Also, as written above, this feature requires `Never` as the bottom type. It was discussed in several threads but has not been finished yet.
 
 * https://forums.swift.org/t/pitch-never-as-a-bottom-type/5920
 
 * https://forums.swift.org/t/make-never-the-bottom-type/36013
-
