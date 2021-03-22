@@ -298,6 +298,18 @@ case <T: Encodable> let .int(value as T), let .string(value as T):
 case <T: StringProtocol> let .int(value as T), let .string(value as T): 
 ```
 
+However, type of target mast be `struct/enum/class` and not protocol existentials. This is from the same reason that protocol existentials cannot be applied to generic functions. 
+
+```Swift
+enum protocols{
+    case encodable(Encodable) 
+}
+
+//Error
+//target value must be struct/enum/class
+case <T: Encodable> let .encodable(value as T):
+```
+
 You have to make bound variables to have the unique type for type safety.
 
 ```Swift
@@ -306,7 +318,7 @@ You have to make bound variables to have the unique type for type safety.
 case <T, S> let .double(a as T, b as T), let .tuple(a as T, b as S):
 ```
 
-All type parameters must be inferred in each pattern. 
+Type parameters are inferred from as the associated values' actual types. All type parameters must be inferred in each pattern. 
 
 ```Swift
 //OK
@@ -332,10 +344,10 @@ let .double(a as T, b as S),
 let .tuple(a as T, b as U):
 ```
 
-Generic-case is not limited in enums with associated values.
+Generic-case is not limited in enums with associated values. 
 
 ```Swift
-switch (42 as Any){
+switch 42{
 //OK
 case <T: Encodable> let value as T: 
     //`value` can be used as type `T` conforming to Encodable
