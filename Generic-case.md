@@ -238,10 +238,10 @@ enum Integer{
 Grammatically, this can be enabled by the following addition.
 
 ```
-//Current Swift
+//current Swift
 case-label → attributes(opt) 'case' case-item-list
 
-//With generic case
+//with generic case
 case-label → attributes(opt) 'case' generic-parameter-clause(opt) case-item-list
 ```
 
@@ -350,8 +350,7 @@ Generic-case is not limited in enums with associated values.
 switch 42{
 //OK
 case <T: Encodable> let value as T: 
-    //`value` can be used as type `T` conforming to Encodable
-    //maybe better than `case let value as Encodable` in some case
+    //`value` can be used as type `T` conforming to `Encodable`
 default: 
 }
 ```
@@ -361,7 +360,7 @@ Type checking is not allowed because type parameters cannot be inferred.
 ```Swift
 //Error
 //this is not allowed because `T` cannot be inferred
-//especially this cannot used as the alternative of `case is Encodable`
+//especially it cannot be used as the alternative to `case is Encodable`
 case <T: Encodable> is T:
 ```
 
@@ -374,12 +373,12 @@ Because multiple pattern matching with `,` is only allowed in switch statements,
 
 //OK
 if case <T> let .int(value as T) = thing{
-    //use value: T
+    //use `value: T`
 }
 
 //OK
 for case <T> let .int(value as T) in things{
-    //use value: T
+    //use `value: T`
 }
 ```
 
@@ -415,10 +414,10 @@ let .tuple(a as T, b as S):
     //if `thing` is immutable, you only have to concern about two cases
     switch thing{
     case let .double(_, b):
-        //shadow b
+        //shadow `b`
         //operation with (b: Double) when `thing` is `.double` 
     case let .tuple(_, b):  
-        //shadow b
+        //shadow `b`
         //operation with (b: String) when `thing` is `.tuple`
     }
 
@@ -436,7 +435,7 @@ let .tuple(a as T, _):
     case <S> 
     let .doubles(_, b as S),
     let .tuple(_, b as S):
-        //operation with (b: S)
+        //operation with `b: S`
     }
 ```
 
@@ -509,7 +508,7 @@ There are three reasons why I selected `as`.
    Swift sometimes use `as` for the purpose of type specifier. Here is no cast operation but only type specification.
 
    ```Swift
-   //specify type of Integer Literal as Double
+   //specify type of integer literal as `Double`
    let value = 3 as Double
    ```
 
@@ -550,7 +549,7 @@ There are three reasons why I selected `as`.
 
 I'm now believe `as` is suitable for this use, but it would be a controversial point. 
 
-As an alternative to current syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#Variable declaration).
+As an alternative to the proposed syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#Variable declaration).
 
 ### Allow explicit type parameter declaration
 
@@ -596,12 +595,12 @@ enum Pet{
 case <T: Animal> 
 let <Fish> .fish(animal as T),
 let <Dog> .mammal(animal as T):
-    //here when match `.mammal`, animal.foo() says "dog" 
+    //here when match `.mammal`, `animal.foo()` says "dog" 
 
 case <T: Animal> 
 let <Fish> .fish(animal as T),
 let <Mammal> .mammal(animal as T):
-    //here when match `.mammal`, it isn't clear what animal.foo() says
+    //here when match `.mammal`, it isn't clear what `animal.foo()` says
 ```
 
 Here, without explicit specification, you cannot cast `Mammal` to `Dog`. Therefore, it is valuable when you want to do such things. However, maybe the next two points are controversial.
@@ -686,22 +685,22 @@ case <T> (value: T) let .first(value), let .second(value):
 }
 
 //OK
-//`value` is casted and then bound, so in the case `value` has type T and actual type is Any
+//`value` is casted and then bound, so in the case `value` has type `T` and actual type is `Any`
 case <T> (value: T) let .first(value as Any), let .second(value as Any):
 ```
 
 Here, a new variable `value: T` is declared at the begining after type parameters, and then variable named `value` is bound in each pattern. If `value` is successfully bound and its type satisfies constraints of the declaration at the begining, `value: T` can be used inside the case.
 
-The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, the use of `as` is sometimes misunderstanding. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Here explicit type parameter declaration is not required. Because you can cast value, you can specify the type of value only write `as Type` explicitly.
+The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, the use of `as` is sometimes misunderstanding. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Here **explicit type parameter declaration** is not required. Because you can cast value, you can specify the type of value only write `as Type` explicitly.
 
-The bad point of this syntax is its strong expressions. Because it has 'arguments-like' form, it is rational to assume that it can be used like others that use 'arguments-like' form, for example, functions, string interpolations and enums with associated values. Therefore, the next doubtful example should be alllowd.
+The bad point of this syntax is its strong expression. Because it has 'arguments-like' form, it is rational to assume that it can be used like others that use 'arguments-like' form, for example, functions, string interpolations and enums with associated values. Therefore, the next doubtful example should be alllowd.
 
 ```Swift
 //is it allowd?
 case <T> (a: T, b: Double? = nil) let .int(a), let .double(a, b):
 ```
 
-Also, this syntax impacts pattern matchings without the generic-case. The next example should be allowed for the consistency of grammar because it is not natural to allow this syntax only with generic-case.
+Also, this syntax impacts pattern matchings without generic-case. The next example should be allowed for the consistency of grammar because it is not natural to allow this syntax only with generic-case.
 
 ```Swift
 //here `value` has type `Int` even if `.void` matches
@@ -712,11 +711,11 @@ Because this syntax is much larger addition than the proposed syntax, this idea 
 
 ### Binding omission
 
-As an alternative to **smarter nested switch statements**, another feature **binding omission** was considered. However, this seems to be a much huger addition than **smarter nested switch statements** and has some irrational points, this idea wasn't included in the main proposal.
+As an alternative to **smarter nested switch statements**, another feature **binding omission** was considered. However, it seems to be a much huger addition than **smarter nested switch statements** and has some irrational points, this idea wasn't included in the main proposal.
 
-Binding omission can be an alternative of smarter nested switch statements. In some situations it can make codes clearer than smarter nested switch statements can. However, expression of binding omission is weaker and there are some cases that cannot support. To make its expression stronger, additive changes were considered, but as a result this idea is much huger and much more complex than **smarter nested switch statements**.
+In some situations it can make codes clearer than smarter nested switch statements can. However, expression of binding omission is weaker and there are some cases that binding omission cannot support. To make its expression stronger, additive changes were considered, but as a result this idea is much huger and much more complex than smarter nested switch statements.
 
-When the bind declaration is omitted in some of the patterns, as far as the type parameters can be inferred, it becomes `Optional`. With generic-case, this binding omission helps us to use common code as common and not-common code as not-common like the next example.
+When the bound variables are omitted in some of the patterns, as far as the type parameters can be inferred, it becomes `Optional`. With generic-case, this binding omission helps us to use common code as common and not-common code as not-common like the next example.
 
 ```Swift
 //OK
@@ -746,11 +745,11 @@ case let .tuple(a, c):
     //...
 ```
 
-If `b` and `c` has also common operations, then the following example can also be done. 
+If `b` and `c` have also common operations, then the following example can also be done. 
 
 ```Swift
 //OK
-//this is also allowed because in each pattern the type S is decidable
+//this is also allowed because in each pattern the type `S` is decidable
 //`b` and `c` is `S?`
 case <T, S> let .double(a as T, b as S), let .tuple(a as T, c as S): 
     //do common operations with first value
@@ -758,7 +757,7 @@ case <T, S> let .double(a as T, b as S), let .tuple(a as T, c as S):
 
     //do common operations with second value
     //compactMap removes value of `Optional<S>.none`
-    //because always either of b and c is nil and the other is not, by calling compactMap you can get the value which is not nil
+    //because always either of `b` and `c` is nil and the other is not, by calling compactMap you can get the value which is not nil
     [b, c].compactMap{$0}.forEach{
     		genericFunc($0)    //call genericFunc<S>
     }
@@ -781,7 +780,7 @@ case let .tuple(a, c):
     //...
 ```
 
-However, it is inconsistent behavior with current syntax. 
+However, it is inconsistent behavior with the current syntax. 
 
 ```Swift
 //Error
@@ -793,7 +792,7 @@ case let .int(int), let .string(string):
 Also, this way doesn't support some situations where **smarter nested switch statements** can support. The next example cannot be allowed because type `S` is not always decidable.
 
 ```Swift
-//It's impossible with binding omission
+//it is impossible with binding omission
 switch thing{
 case .void: break
 case <T: Encodable, S: Encodable>
@@ -808,7 +807,7 @@ let .tuple(a as T, b as S):
     }
 }
 
-//With smarter nested switch
+//with a smarter nested switch statement
 switch thing{
 case .void: break
 case <T: Encodable>
@@ -918,19 +917,19 @@ case let .doubles(a, b):
     //...
 
 //Error
-//You have to set `Never` as dummy type parameters but set `String`
+//you have to set `Never` as dummy type parameters but set `String`
 case <T: Encodable, S: Encodable> 
 let <Int, String> .int(a as T),
 let .doubles(a as T, b as S):
 ```
 
-This is good because it can also work explicit type parameters declaration. Because `Never` is the only possible dummy type parameters, if compiler cannot infer type parameters, then compiler can automatically set `Never`.
+This is good because it can also work without explicit type parameters declaration. Because `Never` is the only possible dummy type parameters, if compiler cannot infer type parameters, then compiler can automatically set `Never`.
 
 ```Swift
 case <T: Encodable, S: Encodable> 
 let .int(a as T),
 let .doubles(a as T, b as S):
-    //b has type `S?`
+    //`b` has type `S?`
     //automatically infer `S` is `Never` when matching `.int(a as T)`
     //...
 ```
