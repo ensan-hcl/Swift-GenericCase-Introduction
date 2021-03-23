@@ -322,7 +322,7 @@ By writing `value as T`, the actual type of `T` is inferred as type of `value` .
 
 ```Swift
 //OK
-//T` `is `Double`
+//`T` is `Double`
 case <T>
 let .double(a as T, _ as T):
 
