@@ -85,7 +85,7 @@ Definition of `container.encode` is **generic**.
 mutating func encode<T>(_ value: T, forKey key: KeyedEncodingContainer<K>.Key) throws where T : Encodable
 ```
 
-You can solve this problem by defining a new function using protocol extension and opening the existential.
+You can solve this problem by defining a new function using protocol extension and open the existential.
 
 ```Swift
 extension Encodable{
@@ -102,7 +102,7 @@ case let .int(value as Encodable), let .string(value as Encodable):
     try value.containerEncode(container: &container, key: .value)
 ```
 
-However, it is much too frustrating to extend protocol every time you want to write code like the example.
+However, it is much too frustrating to extend protocols every time you want to write code like the example.
 
 ### Problem#2: Cannot cast as protocols with associated types
 
@@ -158,7 +158,7 @@ But obviously, it is too a tiresome solution. You only want to use `value.bitWid
 As above, currently, we have problems of ugly repetition due to inflexibility in switch statements with enums with associated values. We can avoid them by using cast to the protocol existentials or super types. However, our ways to deal with them are much too weak.
 
 * We cannot call generic functions when we cast values as protocol existentials.
-* We cannot cast types as a protocol with Self or associated types.
+* We cannot cast type as protocols with Self or associated types.
 
 We have to make up some smart way to deal with such situations.
 
@@ -170,13 +170,13 @@ This proposal suggests a new feature named **generic-case**. This works like thi
 switch either{
 //declare generic type parameter `T` after `case` and cast value as `T`
 case <T> let .first(value as T), let .second(value as T):
-    //you can use `value: T` inside the case
+    //you can use (value: T) inside the case
     //you can call generic function
     genericFunc(value)	//call genericFunc<T>
 }
 ```
 
-This code is translated like this.
+This code works like this code.
 
 ```Swift
 switch either{
@@ -310,19 +310,19 @@ enum protocols{
 case <T: Encodable> let .encodable(value as T):
 ```
 
-You have to make bound variables to have the unique type for type safety.
+You have to make bound variables have a unique type for type safety.
 
 ```Swift
 //Error
-//type of variables must be unique but b has both types `T` and `S`
+//type of variables must be unique but `b` has both types `T` and `S`
 case <T, S> let .double(a as T, b as T), let .tuple(a as T, b as S):
 ```
 
-Type parameters are inferred from the associated values' actual types. All type parameters must be inferred in each pattern. 
+By writing `value as T`, the actual type of `T` is inferred as type of `value` . All type parameters must be uniquely inferred in each pattern. About this expression, another discussion is held in [Type parameters specifiers](#Type-parameters-specifiers).
 
 ```Swift
 //OK
-//T is `Double`
+//T` `is `Double`
 case <T>
 let .double(a as T, _ as T):
 
@@ -338,13 +338,13 @@ case <T> let .int(a):
 //Error
 //type parameters must be inferred in each pattern
 //this is not allowed because the type `S` and `U` are not always decidable in patterns
-//also because type of variables must be unique but b has both types `S` and `U`
+//also because type of variables must be unique but `b` has both types `S` and `U`
 case <T, S, U> 
 let .double(a as T, b as S), 
 let .tuple(a as T, b as U):
 ```
 
-Generic-case is not limited in enums with associated values. 
+Generic-case can be used for more than only with enums with associated values.
 
 ```Swift
 switch 42{
@@ -373,18 +373,18 @@ Because multiple pattern matching with `,` is only allowed in switch statements,
 
 //OK
 if case <T> let .int(value as T) = thing{
-    //use `value: T`
+    //use (value: T)
 }
 
 //OK
 for case <T> let .int(value as T) in things{
-    //use `value: T`
+    //use (value: T)
 }
 ```
 
 ### (Preferred to have) Smarter nested switch statements
 
-We sometimes face situations where each case has common operations, but also not-common operations. With only generic-case, it cannot be solved. However, with **smarter nested switch statements**, this problem can be solved.
+We sometimes face situations where each case has common operations, but also not-common operations. With only generic-case, it still remains as a problem that in such case we cannot avoid repetition of common operations. However, with **smarter nested switch statements**, this problem becomes moderated.
 
 With smarter nested switch statements, as far as the target value is immutable, you can omit cases that are already excluded in the outer switch statement.
 
@@ -435,14 +435,14 @@ let .tuple(a as T, _):
     case <S> 
     let .doubles(_, b as S),
     let .tuple(_, b as S):
-        //operation with `b: S`
+        //operation with (b: S)
     }
 ```
 
-While obviously this is simple and rational, this addition affects not only enums with associated values but also other Swift syntaxes. For example, the following code also should be valid following the same rule.
+While obviously this is simple and rational, this addition affects not only enums with associated values but also other Swift syntax. For example, the following code also should be valid following the same rule.
 
 ```Swift
-//intValue is immutable
+//`intValue` is immutable
 switch intValue{
 case 2,3,4,5:
     //here, following the same rule, omission of `default` should be allowed
@@ -483,11 +483,22 @@ Generic-case is an additive feature that doesn't affect API resilience.
 
 ### Type parameters specifiers
 
-In generic-case, we use `value as T` as the type parameter specifier. Because without some specifications, we cannot find which value should be used as which type.
+In generic-case, we use `value as T` as the type parameter specifier. Because without some specifications, compiler cannot find which value should be used as which type.
 
-However, this is not 'cast' in normal meaning, because in most cases `T` is equal to type of `value` and `T` is inferred from type of `value`. This is only the type specifier. So you may feel uncomfortable using `as` for the purpose of type parameters specification.
+However, this is not normal use of `as` in today's Swift. With today's Swift, this code works fine. Here, `as` is used as the type specifier. Writing this, we can tell compiler that 'the type of `3` is `Double`.'
 
-There are three reasons why I selected `as`.
+```Swift
+//specify type of integer literal as `Double`
+let value = 3 as Double
+```
+
+However, in generic-case, the order is reversed. Writing this, we are telling compiler that '`T` is the type of `value`'.
+
+```Swift
+case <T> let .foo(value as T)
+```
+
+There are two reasons why I selected `as`.
 
 1. Consistency with today's valid syntax.
 
@@ -503,18 +514,7 @@ There are three reasons why I selected `as`.
    case <T: Encodable> let .int(value as T)
    ```
 
-2. Today's use of `as` as the type specifier.
-
-   Swift sometimes use `as` for the purpose of type specifier. Here is no cast operation but only type specification.
-
-   ```Swift
-   //specify type of integer literal as `Double`
-   let value = 3 as Double
-   ```
-
-   (However, while this syntax says 'type of `3` is `Double`', `value as T` says '`T` is type of `value`'. Here the order is reversed.)
-
-3. There are no other symbols suitable for this usage.
+2. There are no other symbols suitable for this usage.
 
    At first I considered `:` as type specifier. 
 
@@ -547,60 +547,40 @@ There are three reasons why I selected `as`.
 
    Because there are no other ways to specify type parameters in Swift, I couldn't select other symbols.
 
-I'm now believe `as` is suitable for this use, but it would be a controversial point. 
-
-As an alternative to the proposed syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#variable-declaration).
+I'm now thinking `as` is suitable for this use, but it would be a controversial point. As an alternative to the proposed syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#variable-declaration).
 
 ### Allow explicit type parameter declaration
 
-Here, it makes no difference whether you explicitly declare type parameters or not.
-
-```Swift
-case <T> 
-let <Int> .int(value as T), 
-let <String> .string(value as T): 
-```
-
-However, in some case, it makes difference.
+In some case, it makes difference whether you explicitly declare type parameters or not.
 
 ```Swift
 protocol Animal{
     func foo()
 }
-class Fish: Animal{
-    func foo(){
-        print("fish")
-    }
-}
-class Mammal: Animal{
+class Mammal: Animal {
     func foo(){
         print("mammal")
     }
 }
-class Dog: Mammal{
+class Dog: Mammal {
     override func foo(){
         print("dog")
     } 
 }
-class Cat: Mammal{
+class Cat: Mammal {
     override func foo(){
         print("cat")
     } 
 }
 enum Pet{
-    case fish(Fish)
     case mammal(Mammal)
 }
 
-case <T: Animal> 
-let <Fish> .fish(animal as T),
-let <Dog> .mammal(animal as T):
-    //here when match `.mammal`, `animal.foo()` says "dog" 
+case <T: Animal> let <Dog> .mammal(animal as T):
+    //here when match `.mammal`, `animal.foo()` says "dog"
 
-case <T: Animal> 
-let <Fish> .fish(animal as T),
-let <Mammal> .mammal(animal as T):
-    //here when match `.mammal`, it isn't clear what `animal.foo()` says
+case <T: Animal> let <Mammal> .mammal(animal as T):
+    //here when match `.mammal`, it is not clear what `animal.foo()` says
 ```
 
 Here, without explicit specification, you cannot cast `Mammal` to `Dog`. Therefore, it is valuable when you want to do such things. However, maybe the next two points are controversial.
@@ -630,10 +610,10 @@ case .tuple(let a, let b):
     //operation when `thing` is `.tuple`
 ```
 
-To achive this style, all of type parameters should be declared at once.
+To achieve this style, all of type parameters should be declared at once.
 
 ```Swift
-//it's possible
+//it is possible
 case <T, S>
 <Double, Double> .double(let a as T, let b as S),
 <Int, String> .tuple(let a as T, let b as S):
@@ -642,7 +622,7 @@ case <T, S>
 However, it becomes ugly when you remove `\n`.
 
 ```Swift
-//it's hard to read 
+//it is hard to read 
 //especially, the part '<T, S> <Double, Double>' is awful
 case <T, S> <Double, Double> .double(let a as T, let b as S), <Int, String> .tuple(let a as T, let b as S):
 ```
@@ -650,12 +630,12 @@ case <T, S> <Double, Double> .double(let a as T, let b as S), <Int, String> .tup
 Also, it is confusing with this form.
 
 ```Swift
-//it's wrong
+//it is wrong
 case <T, S>
 <Double, Double> let .double(a as T, b as S),
 <Int, String> let .tuple(a as T, b as S):
 
-//it's correct
+//it is correct
 case <T, S>
 let <Double, Double> .double(a as T, b as S),
 let <Int, String> .tuple(a as T, b as S):
@@ -680,7 +660,7 @@ As the alternative to proposed syntax of generic-case, following syntax is consi
 ```Swift
 switch either{
 case <T> (value: T) let .first(value), let .second(value):
-    //here value has type `T`
+    //here `value` has type `T`
     genericFunc(value)
 }
 
@@ -691,12 +671,12 @@ case <T> (value: T) let .first(value as Any), let .second(value as Any):
 
 Here, a new variable `value: T` is declared at the begining after type parameters, and then variable named `value` is bound in each pattern. If `value` is successfully bound and its type satisfies constraints of the declaration at the begining, `value: T` can be used inside the case.
 
-The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, the use of `as` is sometimes misunderstanding. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Here **explicit type parameter declaration** is not required. Because you can cast value, you can specify the type of value only write `as Type` explicitly.
+The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, the use of `as` is sometimes misunderstanding. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Here **explicit type parameter declaration** is not required. Because you can cast value, you can specify the type of value by simply writing `as Type` explicitly.
 
 The bad point of this syntax is its strong expression. Because it has 'arguments-like' form, it is rational to assume that it can be used like others that use 'arguments-like' form, for example, functions, string interpolations and enums with associated values. Therefore, the next doubtful example should be alllowd.
 
 ```Swift
-//is it allowd?
+//is it allowed?
 case <T> (a: T, b: Double? = nil) let .int(a), let .double(a, b):
 ```
 
@@ -720,7 +700,7 @@ When the bound variables are omitted in some of the patterns, as far as the type
 ```Swift
 //OK
 //this is allowed although `c` declaration is omitted in `.double` and `b` is omitted in `.tuple`
-//a is `T`, b is `Double?`, and c is `String?`
+//`a` is `T`, `b` is `Double?`, and `c` is `String?`
 case <T> let .double(a as T, b), let .tuple(a as T, c): 
     //do common operations
     genericFunc(a)              //call genericFunc<T>
@@ -800,14 +780,14 @@ let .int(a as T),
 let .string(a as T),
 let .doubles(a as T, b as S),
 let .tuple(a as T, b as S):
-    //b is `S?`
+    //`b` is `S?`
     try container.encode(a, forKey: .a)
     if let b = b{
         try container.encode(b, forKey: .b)
     }
 }
 
-//with a smarter nested switch statement
+//it is possible with a smarter nested switch statement
 switch thing{
 case .void: break
 case <T: Encodable>
@@ -904,7 +884,7 @@ However, if `Never` works as the bottom type and satisfies all possible type con
 case <T: Encodable, S: Encodable> 
 let <Int, Never> .int(a as T),
 let .doubles(a as T, b as S):
-    //b has type `S?`
+    //`b` has type `S?`
     //`S` is `Never` when matching `.int(a as T)`
     //...
 
