@@ -700,7 +700,7 @@ The bad point of this syntax is its strong expression. Because it has 'arguments
 case <T> (a: T, b: Double? = nil) let .int(a), let .double(a, b):
 ```
 
-Also, this syntax impacts pattern matchings without generic-case. The next example should be allowed for the consistency of grammar because it is not natural to allow this syntax only with generic-case.
+Also, this syntax impacts pattern matching without generic-case. The next example should be allowed for the consistency of grammar because it is not natural to allow this syntax only with generic-case.
 
 ```Swift
 //here `value` has type `Int` even if `.void` matches
