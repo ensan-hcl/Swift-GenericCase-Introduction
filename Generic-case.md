@@ -549,7 +549,7 @@ There are three reasons why I selected `as`.
 
 I'm now believe `as` is suitable for this use, but it would be a controversial point. 
 
-As an alternative to the proposed syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#Variable declaration).
+As an alternative to the proposed syntax, another syntax was considered. This is discussed in the section [Variable Declarations](#variable-declaration).
 
 ### Allow explicit type parameter declaration
 
