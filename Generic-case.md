@@ -36,7 +36,7 @@ There are many problems here. Not only awful developer experience but also the p
 
 Another example was found in https://stackoverflow.com/questions/52428073/generic-enum-with-switch-swift
 
-In this case, you can use `Any` as a temporary solution. With today's Swift, the following code is valid.
+For this example, you can use `Any` as a temporary solution. With today's Swift, you can cast values inside the pattern, so the following code is valid. 
 
 ```Swift
     var description: String {
@@ -129,7 +129,7 @@ enum Integer{
 }
 ```
 
-You can solve this problem by defining a new protocol that does not use Self nor associated types.
+You can solve this problem by defining a new protocol that does not use Self nor associated types, so that you can make the code simpler.
 
 ```Swift
 protocol BitWidthServer{
@@ -140,17 +140,14 @@ extension Int64: BitWidthServer{}
 extension Int32: BitWidthServer{}
 extension Int16: BitWidthServer{}
 extension Int8: BitWidthServer{}
-```
 
-Then you can make the code simpler.
-
-```Swift
 case let .int64(value as BitWidthServer),
      let .int32(value as BitWidthServer),
      let .int16(value as BitWidthServer),
      let .int8(value as BitWidthServer):
     return value.bitWidth
 ```
+
 But obviously, it is too a tiresome solution. You only want to use `value.bitWidth` which must exist in each pattern.
 
 ### Summary
@@ -160,7 +157,7 @@ As above, currently, we have problems of ugly repetition due to inflexibility in
 * We cannot call generic functions when we cast values as protocol existentials.
 * We cannot cast type as protocols with Self or associated types.
 
-We have to make up some smart way to deal with such situations.
+We have to make up some smart ways to deal with such situations.
 
 ## Proposed solution
 
@@ -176,7 +173,7 @@ case <T> let .first(value as T), let .second(value as T):
 }
 ```
 
-This code works like this code.
+This example works like the next code as if there are two `case`.
 
 ```Swift
 switch either{
@@ -257,7 +254,7 @@ enum Things{
 }
 ```
 
-In generic-case, you can call generic functions with generic values.
+With generic-case, you can call generic functions with generic values.
 
 ```Swift
 //OK
@@ -318,7 +315,7 @@ You have to make bound variables have a unique type for type safety.
 case <T, S> let .double(a as T, b as T), let .tuple(a as T, b as S):
 ```
 
-By writing `value as T`, the actual type of `T` is inferred as type of `value` . All type parameters must be uniquely inferred in each pattern. About this expression, another discussion is held in [Type parameters specifiers](#Type-parameters-specifiers).
+By writing `value as T`, the actual type of `T` is inferred as type of `value` . All type parameters must be uniquely inferred in each pattern. About this expression `value as T`, another discussion is held in [Type parameters specifiers](#Type-parameters-specifiers).
 
 ```Swift
 //OK
@@ -359,14 +356,14 @@ Type checking is not allowed because type parameters cannot be inferred.
 
 ```Swift
 //Error
-//this is not allowed because `T` cannot be inferred
-//especially it cannot be used as the alternative to `case is Encodable`
+//type parameters must be inferred in each pattern
+//especially, it cannot be used as the alternative to `case is Encodable`
 case <T: Encodable> is T:
 ```
 
 ### Generic-case in other control flow statements
 
-Because multiple pattern matching with `,` is only allowed in switch statements, this generic-case cannot be used effectively in `if case` or `for case`. However, it should be allowed for consistency of syntax.
+Because multiple pattern matching with `,` is only allowed in switch statements, this generic-case cannot be used effectively with `if case` or `for case`. However, it should be allowed for consistency of syntax.
 
 ```Swift
 //of course there are no needs to write like this!
@@ -384,7 +381,7 @@ for case <T> let .int(value as T) in things{
 
 ### (Preferred to have) Smarter nested switch statements
 
-We sometimes face situations where each case has common operations, but also not-common operations. With only generic-case, it still remains as a problem that in such case we cannot avoid repetition of common operations. However, with **smarter nested switch statements**, this problem becomes moderated.
+We sometimes face situations where each case has common operations, but also not-common operations. With only generic-case, it still remains as a problem that in such cases we cannot avoid repetition of common operations. However, with **smarter nested switch statements**, this problem becomes moderated.
 
 With smarter nested switch statements, as far as the target value is immutable, you can omit cases that are already excluded in the outer switch statement.
 
@@ -483,9 +480,9 @@ Generic-case is an additive feature that doesn't affect API resilience.
 
 ### Type parameters specifiers
 
-In generic-case, we use `value as T` as the type parameter specifier. Because without some specifications, compiler cannot find which value should be used as which type.
+In generic-case, we use `value as T` as the type parameter specifier. Without some specifications, compiler cannot find which value should be used as which type.
 
-However, this is not normal use of `as` in today's Swift. With today's Swift, this code works fine. Here, `as` is used as the type specifier. Writing this, we can tell compiler that 'the type of `3` is `Double`.'
+However, this is not normal use of `as` in today's Swift. The next code works fine. Here, `as` is used as the type specifier. Writing this, we can tell compiler that 'the type of `3` is `Double`.'
 
 ```Swift
 //specify type of integer literal as `Double`
@@ -551,7 +548,7 @@ I'm now thinking `as` is suitable for this use, but it would be a controversial 
 
 ### Allow explicit type parameter declaration
 
-In some case, it makes difference whether you explicitly declare type parameters or not.
+In some cases, it makes difference whether you explicitly declare type parameters or not.
 
 ```Swift
 protocol Animal{
@@ -591,16 +588,7 @@ The example is only an example, and I don't know whether there are such cases in
 
 #### Order of component
 
-This is impossible style because which `<Type>` specify which type parameter is not clear.
-
-```Swift
-//it's impossible
-case <T, S>
-.double(let <Double> a as T, let <Double> b as S),
-.tuple(let <Int> a as T, let <String> b as S):
-```
-
-However, this style is widely used. Therefore, it is preferred to allow this style. 
+This style is widely used. Therefore, it is preferred to also allow this style in generic-case. 
 
 ```Swift
 //this is allowed today
@@ -610,18 +598,14 @@ case .tuple(let a, let b):
     //operation when `thing` is `.tuple`
 ```
 
-To achieve this style, all of type parameters should be declared at once.
+To achieve this style, all of type parameters should be declared at once. However, it becomes ugly when you remove `\n`.
 
 ```Swift
 //it is possible
 case <T, S>
 <Double, Double> .double(let a as T, let b as S),
 <Int, String> .tuple(let a as T, let b as S):
-```
 
-However, it becomes ugly when you remove `\n`.
-
-```Swift
 //it is hard to read 
 //especially, the part '<T, S> <Double, Double>' is awful
 case <T, S> <Double, Double> .double(let a as T, let b as S), <Int, String> .tuple(let a as T, let b as S):
@@ -639,6 +623,14 @@ case <T, S>
 case <T, S>
 let <Double, Double> .double(a as T, b as S),
 let <Int, String> .tuple(a as T, b as S):
+```
+
+It allowes you to specify 'dummy parameters' that isn't used in the case.
+
+```Swift
+case <A, B, C, D, E, F, G, H>
+<Double, Double, Int, Int, Int, Int, Int, Int> let .double(a as T, b as S),
+<Int, String, String, Int, Int, Int, Int, Int> let .tuple(a as T, b as S):
 ```
 
 On type check, this should be allowed because type parameter `T` is declared. But no matter where to put the type parameters, it seems weird.
@@ -671,7 +663,7 @@ case <T> (value: T) let .first(value as Any), let .second(value as Any):
 
 Here, a new variable `value: T` is declared at the begining after type parameters, and then variable named `value` is bound in each pattern. If `value` is successfully bound and its type satisfies constraints of the declaration at the begining, `value: T` can be used inside the case.
 
-The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, the use of `as` is sometimes misunderstanding. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Here **explicit type parameter declaration** is not required. Because you can cast value, you can specify the type of value by simply writing `as Type` explicitly.
+The good point of this syntax is that it doesn't require `as`. As written in the controversial points section, **the use of `as` is somewhere misunderstanding**. In addition, the repetition of `value as T` seems redundant. Here, the variables's type is declared only once. Also, **explicit type parameter declaration** is not required. Because you can cast value, you can specify the type of value by simply writing `as Type` explicitly. Because this casting cannot be used for specifying dummy parameters, it would be well balanced solution to allow type casting and disallow specifying dummy parameters.
 
 The bad point of this syntax is its strong expression. Because it has 'arguments-like' form, it is rational to assume that it can be used like others that use 'arguments-like' form, for example, functions, string interpolations and enums with associated values. Therefore, the next doubtful example should be alllowd.
 
@@ -691,7 +683,7 @@ Because this syntax is much larger addition than the proposed syntax, this idea 
 
 ### Binding omission
 
-As an alternative to **smarter nested switch statements**, another feature **binding omission** was considered. However, it seems to be a much huger addition than **smarter nested switch statements** and has some irrational points, this idea wasn't included in the main proposal.
+As an alternative to **smarter nested switch statements**, another feature **binding omission** was considered. However, it seems to be a much huger addition than **smarter nested switch statements** and has some irrational points. This idea wasn't included in the main proposal.
 
 In some situations it can make codes clearer than smarter nested switch statements can. However, expression of binding omission is weaker and there are some cases that binding omission cannot support. To make its expression stronger, additive changes were considered, but as a result this idea is much huger and much more complex than smarter nested switch statements.
 
