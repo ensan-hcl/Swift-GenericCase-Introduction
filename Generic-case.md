@@ -152,7 +152,7 @@ But obviously, it is too a tiresome solution. You only want to use `value.bitWid
 
 ### Summary
 
-As above, currently, we have problems of ugly repetition due to inflexibility in switch statements with enums with associated values. We can avoid them by using cast to the protocol existentials or super types. However, our ways to deal with them are much too weak.
+As above, currently, we have problems of ugly repetition due to inflexibility in switch statements with enums with associated values. We can avoid them by using cast to the protocol existentials or super types. However, this way is much too weak.
 
 * We cannot call generic functions when we cast values as protocol existentials.
 * We cannot cast type as protocols with Self or associated types.
@@ -458,7 +458,11 @@ case 2...5:
     }
 ```
 
-Considering these general cases, it requires much more consideration than it seems at a glance. This is a huge addition and there are no needs be discussed together with generic-case (of course discussion specified to generic-case is possible). This should be discussed later or as a separate proposal.
+Considering these general cases, it requires much more consideration than it seems at a glance. Similar improvements were discussed in Swift forum, but it seemed to be difficult.
+
+https://forums.swift.org/t/should-switch-on-uint-type-be-exhaustive-for-negative-numbers/24127
+
+This is a huge addition and there are no needs be discussed together with generic-case (of course discussion specified to generic-case is possible). This should be discussed later or as a separate proposal.
 
 ## Source compatibility
 
